@@ -1,46 +1,46 @@
 // compile in Linux with gcc:
 // g++ hello_world.cpp -lOpenCL
 
-#include "CL/cl.h"                              //
+#include "CL/cl.h"                              //including Open-CL header
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define DATA_SIZE   10                          //
-#define MEM_SIZE    DATA_SIZE * sizeof(float)   //
+#define DATA_SIZE   10                          //size of data/ arra with 10 values
+#define MEM_SIZE    DATA_SIZE * sizeof(float)   //size of needed memory to e alloated for data (values are of type float)
 
-/** **/ 
+/** source code of kernel as string **/ 
 const char *KernelSource =
-	"#define DATA_SIZE 10												\n"
-	"__kernel void test(__global float *input, __global float *output)  \n"
-	"{																	\n"
-	"	size_t i = get_global_id(0);									\n"
-	"	output[i] = input[i] * input[i];								\n"
-	"}																	\n"
-	"\n";
+	"#define DATA_SIZE 10						       \n"
+	"__kernel void test(__global float *input, __global float *output)   \n"
+	"{									\n"
+	"	size_t i = get_global_id(0);					\n"
+	"	output[i] = input[i] * input[i];				\n"
+	"}									\n"
+	"									\n";
 
-/** **/
+/** main program **/
 int main (void)
 {
-	cl_int				err;                      //
-	cl_platform_id*		platforms = NULL;         //
-	char			    platform_name[1024];      //
-	cl_device_id	    device_id = NULL;         //
-	cl_uint			    num_of_platforms = 0,     //
-					    num_of_devices = 0;       //
-	cl_context 			context;                  //
-	cl_kernel 			kernel;                   //
-	cl_command_queue	command_queue;            //
-	cl_program 			program;                  //
-	cl_mem				input, output;            //
-	float				data[DATA_SIZE] =         //
-							{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-	size_t				global[1] = {DATA_SIZE};  //
-	float				results[DATA_SIZE] = {0}; //
+	cl_int				err;                      	// used for making sure that request caused no errors (error status)
+	cl_platform_id*		platforms = NULL;         	// number which defines the platform (e.g. intel-platform/IDE, ...)
+	char			    	platform_name[1024];      	// name of platform with max 1024 characters
+	cl_device_id	    		device_id = NULL;         	// number which defines the device
+	cl_uint			num_of_platforms = 0,      	// define variable for total number of platforms 
+					num_of_devices = 0;        	// define variable for total number of devices 
+	cl_context 			context;                  	//
+	cl_kernel 			kernel;                   	//
+	cl_command_queue		command_queue;            	//
+	cl_program 			program;                  	//
+	cl_mem				input, output;            	//
+	float				data[DATA_SIZE] =         	// create array of size DATA_SIZE containing values of type float (numbers 1-10)
+					{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+	size_t				global[1] = {DATA_SIZE};  	// create array of size 1 containing value of DATA_SIZE
+	float				results[DATA_SIZE] = {0}; 	// create array of size DATA_SIZE containing values of type float (number 0)
 
 	/* 1) */
 
-	// 
+	// write number of platforms in num_of_platforms, give return statement to err to test if platforms were found
 	err = clGetPlatformIDs(0, NULL, &num_of_platforms);
 	if (err != CL_SUCCESS)
 	{
@@ -48,7 +48,7 @@ int main (void)
 		return 0;
 	}
 
-	// 
+	// reserve num_of_platforms memory, //want to get num_of_platforms platform IDs
 	platforms = (cl_platform_id *)malloc(num_of_platforms);
 	err = clGetPlatformIDs(num_of_platforms, platforms, NULL);
 	if (err != CL_SUCCESS)
@@ -63,15 +63,15 @@ int main (void)
 		// 
 		for (unsigned int i=0; i<num_of_platforms; i++)
 		{
-			//
-			clGetPlatformInfo(platforms[i], CL_PLATFORM_NAME, sizeof(platform_name), platform_name,	NULL);
+			// get the name of the current platform
+			clGetPlatformInfo(platforms[i], CL_PLATFORM_NAME, sizeof(platform_name), platform_name, NULL);
 			if (err != CL_SUCCESS)
 			{
 				printf("Could not get information about platform. Error: %d\n", err);
 				return 0;
 			}
 			
-			// 
+			// if the nvidia platform is found by name, assign it to the variable nvidia_platform
 			if (strstr(platform_name, "NVIDIA") != NULL)
 			{
 				nvidia_platform = i;
@@ -79,7 +79,8 @@ int main (void)
 			}
 		}
 
-		// 
+		// paramter of clGetDeviceIDs: relevant platform, what device we want(here: graphic card), we want the 1st graphic card, device_id is 			saved in device_id, total number of available graphic cards in num_of devices
+		//assign return statement to variable err to test if device was found
 		err = clGetDeviceIDs(platforms[nvidia_platform], CL_DEVICE_TYPE_GPU, 1, &device_id, &num_of_devices);
 		if (err != CL_SUCCESS)
 		{
@@ -88,7 +89,8 @@ int main (void)
 		}
 	}
 
-	// 
+	// given the device_id, a context is returned which is needed to create a command queue
+	// parameter: (properties/platform, num_devices, devices, callback, user_data, errorcode) 
 	context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
 	if (err != CL_SUCCESS)
 	{
@@ -96,7 +98,8 @@ int main (void)
 		return 0;
 	}
 
-	// 
+	// given the context and device_id a command queue is returned
+	// parameter: (context, device, properties/platform, errorcode)
 	command_queue = clCreateCommandQueue(context, device_id, 0, &err);
 	if (err != CL_SUCCESS)
 	{
@@ -104,7 +107,8 @@ int main (void)
 		return 0;
 	}
 
-	// 
+	// creates (online) program from sourcecode of kernel as string
+	// parameters: (context, count, kernel as string, length of string/ NULL if terminated, errorcode)
 	program = clCreateProgramWithSource(context, 1, (const char **)&KernelSource, NULL, &err);
 	if (err != CL_SUCCESS)
 	{
@@ -112,7 +116,8 @@ int main (void)
 		return 0;
 	}
 
-  //
+  	// translates program (binary code for GPU)
+  	// parameters: (program, num_devices, device_list, options, callback, user_data)
 	err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
 	if (err != CL_SUCCESS)
 	{
@@ -120,7 +125,10 @@ int main (void)
 		return 0;
 	}
 
-	//
+	// transform program to kernel
+	// program has multiple functions and starting point must be defined (main)
+	// now as starting point test and having a kernel which is able to run on the GPU
+	// parameters: (program, kernel_name, errorcode)
 	kernel = clCreateKernel(program, "test", &err);
 	if (err != CL_SUCCESS)
 	{
