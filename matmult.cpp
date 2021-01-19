@@ -4,9 +4,56 @@
 #include <string.h>
 #include <omp.h>
 
-#define DATA_SIZE   10                          
+#define MAT_SIZE 1000
+#define DATA_SIZE   MAT_SIZE*MAT_SIZE*sizeof(float)                         
 #define MEM_SIZE    DATA_SIZE * sizeof(float)
-#define DIM 1000
+#define EPSILON 0.0001f
+
+
+
+float** alloc_mat(int row, int col) {
+    float **A1, *A2;
+
+    A1 = (float**)calloc(row, sizeof(float*));
+    A2 = (float*)calloc(row * col, sizeof(float));
+    for (int i = 0; i < row; i++)
+        A1[i] = A2 + i * col;
+
+    return A1;
+}
+
+void init_mat(float** A, int row, int col) {
+    for (int i = 0; i < row * col; i++)
+        A[0][i] = (float)(rand() % 10);
+}
+
+
+void print_mat(float** A, int row, int col, char const* tag) {
+    int i, j;
+
+    printf("Matrix %s:\n", tag);
+    for (i = 0; i < row; i++) {
+        for (j = 0; j < col; j++)
+            printf("%6.1f   ", A[i][j]);
+        printf("\n");
+    }
+}
+
+void free_mat(float** A, int num_rows) {
+    free(A[0]);
+    free(A);
+}
+
+bool mat_equal(float** mat1, float** mat2, int m, int n) {
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (abs(mat1[i][j] - mat2[i][j]) > EPSILON) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
 
 
 /* 
@@ -24,23 +71,23 @@
 
 
 const char *KernelSource =
-"#define DIM 1000		// 	Groesse der Matrix 											\n"
+"#define MAT_SIZE 1000		// 	Groesse der Matrix 											\n"
 "__kernel void matmult(__gloabl float *A, __global float *B, 		\n"
 "											 __global float *C, __global float *B1) {	\n"
 "				int k, j, i = get_global_id(0);													\n"
-"				float A1[DIM], sum;																			\n"
+"				float A1[MAT_SIZE], sum;																			\n"
 "				int i1 = get_local_id(0);																\n"
 "				int n1 = get_local_size(0);															\n"
-"				for (k = 0; k < DIM; k++)																\n"
-"					A1[k] = A[i*DIM+k];																		\n"
-"				for (j = 0; j < DIM; j++) {															\n"
-"					for (k = i1; k < DIM; k+=n1)													\n"
-"						B1[k] = B[k*DIM+j];																	\n"
+"				for (k = 0; k < MAT_SIZE; k++)																\n"
+"					A1[k] = A[i*MAT_SIZE+k];																		\n"
+"				for (j = 0; j < MAT_SIZE; j++) {															\n"
+"					for (k = i1; k < MAT_SIZE; k+=n1)													\n"
+"						B1[k] = B[k*MAT_SIZE+j];																	\n"
 "					barrier(CLK_LOCAL_MEM_FENCE); 		// Warten						\n"
 "					sum = 0.0;																						\n"
-"					for (k = 0; k < DIM; k++)															\n"
+"					for (k = 0; k < MAT_SIZE; k++)															\n"
 "						sum += A1[k] * B1[k];																\n"
-"					C[i*DIM+j] = sum;																			\n"
+"					C[i*MAT_SIZE+j] = sum;																			\n"
 "				}																												\n"
 "}																															\n"
 "\n";
@@ -60,11 +107,18 @@ int main (void) {
 	cl_kernel 				kernel;                   	
 	cl_command_queue	command_queue;            
 	cl_program 				program;                  
-	cl_mem						input, output;            
+	cl_mem						Ap, Bp, Cp;           
 	float							data[DATA_SIZE] =         	
 										{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-	size_t						global[1] = {DATA_SIZE};  
+	size_t						global[1] = {MAT_SIZE};  
 	float							results[DATA_SIZE] = {0}; 
+
+
+  float **A, **B, **C;
+
+  A = alloc_mat(MAT_SIZE, MAT_SIZE); init_mat(A, MAT_SIZE, MAT_SIZE);
+  B = alloc_mat(MAT_SIZE, MAT_SIZE); init_mat(B, MAT_SIZE, MAT_SIZE);
+  C = alloc_mat(MAT_SIZE, MAT_SIZE);
 
 
 	/* 1) */
@@ -136,29 +190,38 @@ int main (void) {
 	}
 
 	/* 2) */
-	input  = clCreateBuffer (context, CL_MEM_READ_ONLY,	 MEM_SIZE, NULL, &err);
-	output = clCreateBuffer (context, CL_MEM_WRITE_ONLY, MEM_SIZE, NULL, &err);
-	clEnqueueWriteBuffer(command_queue, input, CL_TRUE, 0, MEM_SIZE, data, 0, NULL, NULL);
-	clSetKernelArg(kernel, 0, sizeof(cl_mem), &input);
-	clSetKernelArg(kernel, 1, sizeof(cl_mem), &output);
+	Ap = clCreateBuffer(context, CL_MEM_READ_ONLY, DATA_SIZE, NULL, &err);
+  Bp = clCreateBuffer(context, CL_MEM_READ_ONLY, DATA_SIZE, NULL, &err);
+  Cp = clCreateBuffer(context, CL_MEM_WRITE_ONLY, DATA_SIZE, NULL, &err);
+	clEnqueueWriteBuffer(command_queue, Ap, CL_TRUE, 0, DATA_SIZE, A[0], 0, NULL, NULL);
+  clEnqueueWriteBuffer(command_queue, Bp, CL_TRUE, 0, DATA_SIZE, B[0], 0, NULL, NULL);
+  clSetKernelArg(kernel, 0, sizeof(cl_mem), &Ap);
+  clSetKernelArg(kernel, 1, sizeof(cl_mem), &Bp);
+  clSetKernelArg(kernel, 2, sizeof(cl_mem), &Cp);
 
 
 	/* 3)  */
 	clEnqueueNDRangeKernel (command_queue, kernel, 1, NULL, global, NULL, 0, NULL, NULL);
 	clFinish(command_queue);
-	clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, MEM_SIZE, results, 0, NULL, NULL);
+	clEnqueueReadBuffer(command_queue, Cp, CL_TRUE, 0, DATA_SIZE, C[0], 0, NULL, NULL);
 
   for (unsigned int i=0; i < DATA_SIZE; i++)
     printf("%f\n", results[i]);
 
 
 	/* 4) */
-	clReleaseMemObject(input);
-	clReleaseMemObject(output);
+	clReleaseMemObject(Ap);
+	clReleaseMemObject(Bp);
 	clReleaseProgram(program);
 	clReleaseKernel(kernel);
 	clReleaseCommandQueue(command_queue);
 	clReleaseContext(context);
+
+
+  free_mat(A, MAT_SIZE);
+  free_mat(B, MAT_SIZE);
+  free_mat(C, MAT_SIZE);
+
 
 	return 0;
 }
