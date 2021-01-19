@@ -191,11 +191,14 @@ int main(void) {
     assert(mat_equal(C, C_serial, MAT_SIZE, MAT_SIZE));
 
     printf("Results are correct.\n");
-    double t_serial = t_end_serial - t_end_dist;
-    double t_parallel = t_end_dist - t_start_dist;
+    double t_serial = t_end_serial - t_end_par;
+    double t_parallel = t_end_par - t_start_par;
     printf("Serial took %.5f seconds.\n", t_serial);
     printf("Parallel took %.5f seconds.\n", t_parallel);
     printf("That's %.2f times faster!\n", t_serial / t_parallel);
+
+    printf("Our results (3570K/GTX660) were:\n");
+    printf("Serial: 58.36 seconds, Parallel: 0.689 seconds, Speedup : 84.69\n");
 
     return 0;
 }
