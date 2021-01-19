@@ -6,7 +6,7 @@ ASSIGNMENT_NUMBER=04
 ASSIGNMENT_TITLE=pvs$(ASSIGNMENT_NUMBER)-grp$(ASSIGNMENT_GROUP)
 
 .PHONY: build
-build: hello_world
+build: hello_world matmult
 
 .PHONY: debug
 debug: GCC_FLAGS += -g
