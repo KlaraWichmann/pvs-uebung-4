@@ -34,17 +34,12 @@ clean:
 codeformat:
 	clang-format -i *.[ch]pp
 
-PDF_FILENAME=$(ASSIGNMENT_TITLE).pdf
-.PHONY: pdf
-pdf:
-	pandoc pvs.md -o $(PDF_FILENAME) --from markdown --template ~/.pandoc/eisvogel.latex --listings
-
-FILES=Makefile pvs.md *.[ch]pp $(PDF_FILENAME)
+FILES=Makefile README.md *.[ch]pp
 
 ASSIGNMENT_DIR=$(ASSIGNMENT_TITLE)
 TARBALL_NAME=$(ASSIGNMENT_TITLE)-piekarski-wichmann-ruckel.tar.gz
 .PHONY: tarball
-tarball: pdf
+tarball:
 	[ -z "$(TARBALL_NAME)" ] || rm $(TARBALL_NAME)
 	mkdir $(ASSIGNMENT_DIR)
 	for f in $(FILES); do cp $$f $(ASSIGNMENT_DIR); done
