@@ -5,17 +5,29 @@
 #include <stdlib.h>
 #include <string.h>
 #include "CL/cl.h"
+#include "matmult.hpp"
 
-#define DATA_SIZE 10
+#define DATA_SIZE MAT_SIZE* MAT_SIZE
 #define MEM_SIZE DATA_SIZE * sizeof(float)
 
 /** **/
-const char* KernelSource =
-    "#define DATA_SIZE 10\n"
-    "__kernel void test(__global float *input, __global float *output) {\n"
-    "   size_t i = get_global_id(0);\n"
-    "   output[i] = input[i] * input[i];\n"
-    "}\n";
+const char* KernelSource = "#define MAT_SIZE " MAT_SIZE_STR
+                           "\n"
+                           "__kernel void test(__global float *A,"
+                           "                   __global float *B,"
+                           "                   __global float *C) {"
+                           "   size_t id = get_global_id(0);"
+                           "   int pos_c = (int) id;"
+                           "   C[pos_c] = 0;"
+                           "   int i = pos_c / MAT_SIZE;"
+                           "   int j = pos_c % MAT_SIZE;"
+                           "   for (int k = 0; k < MAT_SIZE; ++k) {"
+                           "       int pos_a = (i * MAT_SIZE) + k;"
+                           "       int pos_b = (k * MAT_SIZE) + j;"
+                           "       C[pos_c] += A[pos_a] * B[pos_b];"
+                           "   }"
+                           //    "   C[pos_c] = AB[pos_c];"
+                           "}";
 
 /** **/
 int main(void) {
@@ -29,15 +41,20 @@ int main(void) {
     cl_kernel kernel;
     cl_command_queue command_queue;
     cl_program program;
-    cl_mem input, output;
-    float data[DATA_SIZE] =
-        {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    cl_mem buf_A, buf_B, output;
+
+    float** A = alloc_mat(MAT_SIZE, MAT_SIZE);
+    init_mat(A, MAT_SIZE, MAT_SIZE);
+
+    float** B = alloc_mat(MAT_SIZE, MAT_SIZE);
+    init_mat(B, MAT_SIZE, MAT_SIZE);
+
+    float** C = alloc_mat(MAT_SIZE, MAT_SIZE);
+    float** C_serial = alloc_mat(MAT_SIZE, MAT_SIZE);
+
     size_t global[1] = {DATA_SIZE};
-    float results[DATA_SIZE] = {0};
 
     /* 1) */
-
-
     err = clGetPlatformIDs(0, NULL, &num_of_platforms);
     if (err != CL_SUCCESS) {
         printf("No platforms found. Error: %d\n", err);
@@ -118,17 +135,30 @@ int main(void) {
 
     /* 2) */
 
-
-    input = clCreateBuffer(context, CL_MEM_READ_ONLY, MEM_SIZE, NULL, &err);
+    // input = clCreateBuffer(context, CL_MEM_READ_ONLY, MEM_SIZE * 2, NULL,
+    // &err);
+    buf_A = clCreateBuffer(context, CL_MEM_WRITE_ONLY, MEM_SIZE, NULL, &err);
+    buf_B = clCreateBuffer(context, CL_MEM_WRITE_ONLY, MEM_SIZE, NULL, &err);
     output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, MEM_SIZE, NULL, &err);
 
-
-    clEnqueueWriteBuffer(command_queue, input, CL_TRUE, 0, MEM_SIZE, data, 0,
+    /*
+     * clEnqueueWriteBuffer(command_queue, input, CL_TRUE, 0, MEM_SIZE, *A, 0,
+                         NULL, NULL);
+    clEnqueueWriteBuffer(command_queue, input, CL_TRUE, 0, MEM_SIZE, *B, 0,
+                         NULL, NULL);
+                         */
+    /*
+    clEnqueueWriteBuffer(command_queue, input, CL_TRUE, 0, MEM_SIZE * 2,
+                         mats_a_b, 0, NULL, NULL);
+                         */
+    clEnqueueWriteBuffer(command_queue, buf_A, CL_TRUE, 0, MEM_SIZE, *A, 0,
+                         NULL, NULL);
+    clEnqueueWriteBuffer(command_queue, buf_B, CL_TRUE, 0, MEM_SIZE, *B, 0,
                          NULL, NULL);
 
-
-    clSetKernelArg(kernel, 0, sizeof(cl_mem), &input);
-    clSetKernelArg(kernel, 1, sizeof(cl_mem), &output);
+    clSetKernelArg(kernel, 0, sizeof(cl_mem), &buf_A);
+    clSetKernelArg(kernel, 1, sizeof(cl_mem), &buf_B);
+    clSetKernelArg(kernel, 2, sizeof(cl_mem), &output);
 
     /* 3)  */
 
@@ -139,16 +169,19 @@ int main(void) {
 
     clFinish(command_queue);
 
-
-    clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, MEM_SIZE, results, 0,
+    clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, MEM_SIZE, *C, 0,
                         NULL, NULL);
 
+    printf("%f\n", C[4][2]);
+    matmult_serial(A, B, C_serial);
+    printf("%f\n", C_serial[0][0]);
 
-    for (unsigned int i = 0; i < DATA_SIZE; i++)
-        printf("%f\n", results[i]);
+    print_mat(C, MAT_SIZE, MAT_SIZE, "dist");
+    print_mat(C_serial, MAT_SIZE, MAT_SIZE, "serial");
 
     /* 4) */
-    clReleaseMemObject(input);
+    clReleaseMemObject(buf_A);
+    clReleaseMemObject(buf_B);
     clReleaseMemObject(output);
     clReleaseProgram(program);
     clReleaseKernel(kernel);
