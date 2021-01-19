@@ -1,11 +1,13 @@
 // compile in Linux with gcc:
 // g++ hello_world.cpp -lOpenCL
 
+#include "matmult.hpp"
+#include <assert.h>
+#include <omp.h>  // for wall-clock timing
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "CL/cl.h"
-#include "matmult.hpp"
 
 #define DATA_SIZE MAT_SIZE* MAT_SIZE
 #define MEM_SIZE DATA_SIZE * sizeof(float)
@@ -26,7 +28,6 @@ const char* KernelSource = "#define MAT_SIZE " MAT_SIZE_STR
                            "       int pos_b = (k * MAT_SIZE) + j;"
                            "       C[pos_c] += A[pos_a] * B[pos_b];"
                            "   }"
-                           //    "   C[pos_c] = AB[pos_c];"
                            "}";
 
 /** **/
@@ -54,6 +55,7 @@ int main(void) {
 
     size_t global[1] = {DATA_SIZE};
 
+    double t_start_dist = omp_get_wtime();
     /* 1) */
     err = clGetPlatformIDs(0, NULL, &num_of_platforms);
     if (err != CL_SUCCESS) {
@@ -172,13 +174,6 @@ int main(void) {
     clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, MEM_SIZE, *C, 0,
                         NULL, NULL);
 
-    printf("%f\n", C[4][2]);
-    matmult_serial(A, B, C_serial);
-    printf("%f\n", C_serial[0][0]);
-
-    print_mat(C, MAT_SIZE, MAT_SIZE, "dist");
-    print_mat(C_serial, MAT_SIZE, MAT_SIZE, "serial");
-
     /* 4) */
     clReleaseMemObject(buf_A);
     clReleaseMemObject(buf_B);
@@ -187,6 +182,20 @@ int main(void) {
     clReleaseKernel(kernel);
     clReleaseCommandQueue(command_queue);
     clReleaseContext(context);
+
+    double t_end_dist = omp_get_wtime();
+
+    matmult_serial(A, B, C_serial);
+    double t_end_serial = omp_get_wtime();
+
+    assert(mat_equal(C, C_serial, MAT_SIZE, MAT_SIZE));
+
+    printf("Results are correct.\n");
+    double t_serial = t_end_serial - t_end_dist;
+    double t_parallel = t_end_dist - t_start_dist;
+    printf("Serial took %.5f seconds.\n", t_serial);
+    printf("Parallel took %.5f seconds.\n", t_parallel);
+    printf("That's %.2f times faster!", t_serial / t_parallel);
 
     return 0;
 }
