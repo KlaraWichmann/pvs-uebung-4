@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAT_SIZE 1000
-#define MAT_SIZE_STR "1000"
+#define MAT_SIZE 2000
+#define MAT_SIZE_STR "2000"
 #define EPSILON 0.0001f
 
 // ---------------------------------------------------------------------------
