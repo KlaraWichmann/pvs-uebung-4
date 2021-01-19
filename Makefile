@@ -16,9 +16,15 @@ debug: build
 hello_world:
 	g++ $(GCC_FLAGS) hello_world.cpp -o hello_world
 
+.PHONY: matmult
+matmult:
+	g++ $(GCC_FLAGS) matmult.cpp -o matmult
+
+
 .PHONY: test
 test: build
 	./hello_world
+	./matmult
 
 .PHONY: clean
 clean:
