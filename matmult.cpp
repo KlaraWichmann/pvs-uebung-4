@@ -11,18 +11,11 @@
 
 /** **/
 const char* KernelSource =
-    "#define DATA_SIZE 10						"
-    "						\n"
-    "__kernel void test(__global float *input, __global float *output)  \n"
-    "{									"
-    "								\n"
-    "	size_t i = get_global_id(0);					"
-    "				\n"
-    "	output[i] = input[i] * input[i];				"
-    "				\n"
-    "}									"
-    "								\n"
-    "\n";
+    "#define DATA_SIZE 10\n"
+    "__kernel void test(__global float *input, __global float *output) {\n"
+    "   size_t i = get_global_id(0);\n"
+    "   output[i] = input[i] * input[i];\n"
+    "}\n";
 
 /** **/
 int main(void) {
