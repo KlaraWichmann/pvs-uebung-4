@@ -195,7 +195,7 @@ int main(void) {
     double t_parallel = t_end_dist - t_start_dist;
     printf("Serial took %.5f seconds.\n", t_serial);
     printf("Parallel took %.5f seconds.\n", t_parallel);
-    printf("That's %.2f times faster!", t_serial / t_parallel);
+    printf("That's %.2f times faster!\n", t_serial / t_parallel);
 
     return 0;
 }
