@@ -55,7 +55,7 @@ int main(void) {
 
     size_t global[1] = {DATA_SIZE};
 
-    double t_start_dist = omp_get_wtime();
+    double t_start_par = omp_get_wtime();
     /* 1) */
     err = clGetPlatformIDs(0, NULL, &num_of_platforms);
     if (err != CL_SUCCESS) {
@@ -183,7 +183,7 @@ int main(void) {
     clReleaseCommandQueue(command_queue);
     clReleaseContext(context);
 
-    double t_end_dist = omp_get_wtime();
+    double t_end_par = omp_get_wtime();
 
     matmult_serial(A, B, C_serial);
     double t_end_serial = omp_get_wtime();
