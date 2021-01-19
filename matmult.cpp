@@ -137,22 +137,10 @@ int main(void) {
 
     /* 2) */
 
-    // input = clCreateBuffer(context, CL_MEM_READ_ONLY, MEM_SIZE * 2, NULL,
-    // &err);
     buf_A = clCreateBuffer(context, CL_MEM_WRITE_ONLY, MEM_SIZE, NULL, &err);
     buf_B = clCreateBuffer(context, CL_MEM_WRITE_ONLY, MEM_SIZE, NULL, &err);
     output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, MEM_SIZE, NULL, &err);
 
-    /*
-     * clEnqueueWriteBuffer(command_queue, input, CL_TRUE, 0, MEM_SIZE, *A, 0,
-                         NULL, NULL);
-    clEnqueueWriteBuffer(command_queue, input, CL_TRUE, 0, MEM_SIZE, *B, 0,
-                         NULL, NULL);
-                         */
-    /*
-    clEnqueueWriteBuffer(command_queue, input, CL_TRUE, 0, MEM_SIZE * 2,
-                         mats_a_b, 0, NULL, NULL);
-                         */
     clEnqueueWriteBuffer(command_queue, buf_A, CL_TRUE, 0, MEM_SIZE, *A, 0,
                          NULL, NULL);
     clEnqueueWriteBuffer(command_queue, buf_B, CL_TRUE, 0, MEM_SIZE, *B, 0,
