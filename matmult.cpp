@@ -15,7 +15,7 @@
 /** **/
 const char* KernelSource = "#define MAT_SIZE " MAT_SIZE_STR
                            "\n"
-                           "__kernel void test(__global float *A,"
+                           "__kernel void mult(__global float *A,"
                            "                   __global float *B,"
                            "                   __global float *C) {"
                            "   size_t id = get_global_id(0);"
@@ -129,7 +129,7 @@ int main(void) {
     }
 
 
-    kernel = clCreateKernel(program, "test", &err);
+    kernel = clCreateKernel(program, "mult", &err);
     if (err != CL_SUCCESS) {
         printf("Error setting kernel. Error: %d\n", err);
         return 0;
