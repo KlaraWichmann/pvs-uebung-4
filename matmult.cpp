@@ -36,8 +36,7 @@ int main(void) {
     cl_platform_id* platforms = NULL;
     char platform_name[1024];
     cl_device_id device_id = NULL;
-    cl_uint num_of_platforms = 0,
-        num_of_devices = 0;
+    cl_uint num_of_platforms = 0, num_of_devices = 0;
     cl_context context;
     cl_kernel kernel;
     cl_command_queue command_queue;
@@ -63,7 +62,6 @@ int main(void) {
         return 0;
     }
 
-
     platforms = (cl_platform_id*)malloc(num_of_platforms);
     err = clGetPlatformIDs(num_of_platforms, platforms, NULL);
     if (err != CL_SUCCESS) {
@@ -72,9 +70,7 @@ int main(void) {
     } else {
         int nvidia_platform = 0;
 
-
         for (unsigned int i = 0; i < num_of_platforms; i++) {
-
             clGetPlatformInfo(platforms[i], CL_PLATFORM_NAME,
                               sizeof(platform_name), platform_name, NULL);
             if (err != CL_SUCCESS) {
@@ -83,13 +79,11 @@ int main(void) {
                 return 0;
             }
 
-
             if (strstr(platform_name, "NVIDIA") != NULL) {
                 nvidia_platform = i;
                 break;
             }
         }
-
 
         err = clGetDeviceIDs(platforms[nvidia_platform], CL_DEVICE_TYPE_GPU, 1,
                              &device_id, &num_of_devices);
@@ -99,20 +93,17 @@ int main(void) {
         }
     }
 
-
     context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
     if (err != CL_SUCCESS) {
         printf("Unable to create context. Error: %d\n", err);
         return 0;
     }
 
-
     command_queue = clCreateCommandQueue(context, device_id, 0, &err);
     if (err != CL_SUCCESS) {
         printf("Unable to create command queue. Error: %d\n", err);
         return 0;
     }
-
 
     program = clCreateProgramWithSource(context, 1, (const char**)&KernelSource,
                                         NULL, &err);
@@ -121,13 +112,11 @@ int main(void) {
         return 0;
     }
 
-
     err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
     if (err != CL_SUCCESS) {
         printf("Error building program. Error: %d\n", err);
         return 0;
     }
-
 
     kernel = clCreateKernel(program, "mult", &err);
     if (err != CL_SUCCESS) {
@@ -152,10 +141,8 @@ int main(void) {
 
     /* 3)  */
 
-
     clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, global, NULL, 0,
                            NULL, NULL);
-
 
     clFinish(command_queue);
 
