@@ -1,5 +1,6 @@
 .ONESHELL:
-GCC_FLAGS = -Wall -lOpenCL -fopenmp
+GCC_FLAGS = -Wall -fopenmp
+GCC_L = -lOpenCL
 
 ASSIGNMENT_GROUP=B
 ASSIGNMENT_NUMBER=04
@@ -14,11 +15,11 @@ debug: build
 
 .PHONY: hello_world
 hello_world:
-	g++ $(GCC_FLAGS) hello_world.cpp -o hello_world
+	g++ $(GCC_FLAGS) hello_world.cpp -o hello_world $(GCC_L)
 
 .PHONY: matmult
 matmult:
-	g++ $(GCC_FLAGS) matmult.cpp -o matmult
+	g++ $(GCC_FLAGS) matmult.cpp -o matmult $(GCC_L)
 
 
 .PHONY: test
