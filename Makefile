@@ -6,6 +6,8 @@ ASSIGNMENT_GROUP=B
 ASSIGNMENT_NUMBER=04
 ASSIGNMENT_TITLE=pvs$(ASSIGNMENT_NUMBER)-grp$(ASSIGNMENT_GROUP)
 
+MAT_SIZE=1000
+
 .PHONY: build
 build: hello_world matmult
 
@@ -19,7 +21,7 @@ hello_world:
 
 .PHONY: matmult
 matmult:
-	g++ $(GCC_FLAGS) matmult.cpp -o matmult $(GCC_L)
+	g++ $(GCC_FLAGS) matmult.cpp -o matmult $(GCC_L) -DMAT_SIZE=$(MAT_SIZE)
 
 
 .PHONY: test

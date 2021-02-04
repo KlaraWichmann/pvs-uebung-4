@@ -31,6 +31,8 @@ const char* KernelSource = "#define MAT_SIZE " MAT_SIZE_STR
 
 /** **/
 int main(void) {
+    printf("Dimension is %dx%d\n", MAT_SIZE, MAT_SIZE);
+
     cl_int err;
     cl_platform_id* platforms = NULL;
     char platform_name[1024];

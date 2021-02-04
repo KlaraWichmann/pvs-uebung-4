@@ -1,11 +1,17 @@
 #ifndef MATMULT_HPP
 #define MATMULT_HPP
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifndef MAT_SIZE
 #define MAT_SIZE 1000
-#define MAT_SIZE_STR "1000"
+#endif
+
+#define MAT_SIZE_STR STR(MAT_SIZE)
 #define EPSILON 0.0001f
 
 // ---------------------------------------------------------------------------
