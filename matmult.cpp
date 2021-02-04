@@ -20,14 +20,13 @@ const char* KernelSource = "#define MAT_SIZE " MAT_SIZE_STR
                            "                   __global float *C) {"
                            "   size_t id = get_global_id(0);"
                            "   int pos_c = (int) id;"
-                           "   C[pos_c] = 0;"
                            "   int i = pos_c / MAT_SIZE;"
                            "   int j = pos_c % MAT_SIZE;"
+                           "   float tmp = 0.f;"
                            "   for (int k = 0; k < MAT_SIZE; ++k) {"
-                           "       int pos_a = (i * MAT_SIZE) + k;"
-                           "       int pos_b = (k * MAT_SIZE) + j;"
-                           "       C[pos_c] += A[pos_a] * B[pos_b];"
+                           "       tmp += A[(i * MAT_SIZE) + k] * B[(k * MAT_SIZE) + j];"
                            "   }"
+                           "   C[pos_c] = tmp;"
                            "}";
 
 /** **/
@@ -126,8 +125,8 @@ int main(void) {
 
     /* 2) */
 
-    buf_A = clCreateBuffer(context, CL_MEM_WRITE_ONLY, MEM_SIZE, NULL, &err);
-    buf_B = clCreateBuffer(context, CL_MEM_WRITE_ONLY, MEM_SIZE, NULL, &err);
+    buf_A = clCreateBuffer(context, CL_MEM_READ_ONLY, MEM_SIZE, NULL, &err);
+    buf_B = clCreateBuffer(context, CL_MEM_READ_ONLY, MEM_SIZE, NULL, &err);
     output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, MEM_SIZE, NULL, &err);
 
     clEnqueueWriteBuffer(command_queue, buf_A, CL_TRUE, 0, MEM_SIZE, *A, 0,
@@ -173,7 +172,7 @@ int main(void) {
     printf("That's %.2f times faster!\n", t_serial / t_parallel);
 
     printf("Our results on a (3570K, GTX660, 2000x2000 matrices) were:\n");
-    printf("Serial: 58.36 seconds, Parallel: 0.689 seconds, Speedup : 84.69\n");
+    printf("Serial: 58.36 seconds, Parallel: 0.479 seconds, Speedup: 121.82\n");
 
     return 0;
 }
